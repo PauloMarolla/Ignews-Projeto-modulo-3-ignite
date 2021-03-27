@@ -1,4 +1,6 @@
 import { useSession, signIn } from 'next-auth/client'
+import { api } from '../../services/api'
+import { getStripeJs } from '../../services/stripe-js'
 import styles from './styles.module.scss'
 
 interface SusbcribeButtonProps {
@@ -8,13 +10,25 @@ interface SusbcribeButtonProps {
 export const SubscribeButton = ({priceId}: SusbcribeButtonProps) => {
   const [session] = useSession()
 
-  function handleSubscribe() {
+  async function handleSubscribe() {
     if(!session) {
       signIn('github')
       return
     }
 
-    
+    try {
+      const response = await api.post('/subscribe')
+
+      const { sessionId } = response.data
+
+      const stripe = await getStripeJs()
+
+      await stripe.redirectToCheckout({sessionId})
+
+    } catch(err) {
+      console.log(err.response);
+      alert(err.message)
+    }
 
   }
 
