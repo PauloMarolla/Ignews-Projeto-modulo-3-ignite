@@ -3,8 +3,20 @@ import Head from 'next/head'
 import { getPrismicClient } from '../../services/prismic';
 import styles from './styles.module.scss';
 import Prismic from '@prismicio/client'
+import { RichText } from 'prismic-dom'
+import { time } from 'node:console';
 
-export default function Posts() {
+type Post = {
+  slug: string,
+  title: string,
+  excerpt: string,
+  updatedAt: string
+}
+interface PostsProps {
+  posts: Post[]
+}
+
+export default function Posts({posts}: PostsProps) {
   return (
     <>
       <Head>
@@ -13,26 +25,15 @@ export default function Posts() {
 
       <main className={styles.container}>
         <div className={styles.posts}>
-          <a href="">
-            <time>12 de marõ de 2020</time>
-            <strong>Esse é meu titulo</strong>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium eligendi minima nisi quasi! Ullam consequuntur, lor suscipit obcaecati! Suscipit recusandae voluptate nemo doloremque ducimus obcaecati, reprehenderit esse autem vitae, libero, ipsa adipisci odit saepe similique.</p>
+
+          {posts.map(post => (
+            <a key={post.slug} href="#">
+            <time>{post.updatedAt}</time>
+            <strong>{post.title}</strong>
+            <p>{post.excerpt}</p>
           </a>
-          <a href="">
-            <time>12 de marõ de 2020</time>
-            <strong>Esse é meu titulo</strong>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium eligendi minima nisi quasi! Ullam consequuntur, lor suscipit obcaecati! Suscipit recusandae voluptate nemo doloremque ducimus obcaecati, reprehenderit esse autem vitae, libero, ipsa adipisci odit saepe similique.</p>
-          </a>
-          <a href="">
-            <time>12 de marõ de 2020</time>
-            <strong>Esse é meu titulo</strong>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium eligendi minima nisi quasi! Ullam consequuntur, lor suscipit obcaecati! Suscipit recusandae voluptate nemo doloremque ducimus obcaecati, reprehenderit esse autem vitae, libero, ipsa adipisci odit saepe similique.</p>
-          </a>
-          <a href="">
-            <time>12 de marõ de 2020</time>
-            <strong>Esse é meu titulo</strong>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium eligendi minima nisi quasi! Ullam consequuntur, lor suscipit obcaecati! Suscipit recusandae voluptate nemo doloremque ducimus obcaecati, reprehenderit esse autem vitae, libero, ipsa adipisci odit saepe similique.</p>
-          </a>
+          ))}
+
         </div>
       </main>
     </>
@@ -48,9 +49,20 @@ export const getStaticProps: GetStaticProps = async () => {
     pageSize: 100,
   })
 
-  console.log(response);
+  const posts = response.results.map(post => {
+    return {
+      slug: post.uid,
+      title: RichText.asText(post.data.title),
+      excerpt: post.data.content.find(content => content.type === 'paragraph')?.text ?? '',
+      updatedAt: new Date(post.last_publication_date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      })
+    }
+  })
 
   return {
-    props: {}
+    props: {posts}
   }
 }
